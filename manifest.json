@@ -1,0 +1,13 @@
+{
+    "name": "ST-Echos",
+    "display_name": "十三的回声：ST-Echos 记忆",
+    "loading_order": 100,
+    "requires": [],
+    "optional": [],
+    "js": "index.js",
+    "css": "style.css",
+    "author": "Thirteen-Moons",
+    "version": "1.0.0",
+    "homePage": "",
+    "auto_update": false
+}

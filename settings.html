@@ -1,0 +1,335 @@
+<!-- Copyright (c) 2026 Thirteen-Moons
+Licensed under AGPL-3.0; see LICENSE for full terms
+Derivative works must retain attribution to Thirteen-Moons
+v1.0.0 -->
+
+<!DOCTYPE html>
+<!-- ST-Echos 扩展面板模板。结构：外层 inline-drawer（可折叠），内部按层分板块。 -->
+<div id="stecho_container" class="stecho-container">
+    <div class="inline-drawer">
+        <div class="inline-drawer-toggle inline-drawer-header">
+            <b>ST-Echos 记忆</b>
+            <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
+        </div>
+        <div class="inline-drawer-content">
+
+            <!-- ============ 第一层：⚙预设管理 ============ -->
+            <div class="stecho-section" id="stecho_section_preset">
+                <div class="stecho-section-title">⚙ 预设管理</div>
+                <div class="stecho-row" id="stecho_preset_bar">
+                    <select id="stecho_preset_select" class="stecho-select text_pole"></select>
+                    <div class="stecho-icon-btns">
+                        <button id="stecho_preset_save" class="stecho-icon-btn" title="保存 / 更新当前预设">
+                            <i class="fa-solid fa-floppy-disk"></i>
+                        </button>
+                        <button id="stecho_preset_new" class="stecho-icon-btn" title="新建预设">
+                            <i class="fa-solid fa-circle-plus"></i>
+                        </button>
+                        <button id="stecho_preset_delete" class="stecho-icon-btn stecho-danger" title="删除当前预设">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ 第二层：🌐自定义API设置 ============ -->
+            <div class="stecho-section" id="stecho_section_api">
+                <div class="stecho-section-title">🌐 自定义API设置</div>
+                <div class="stecho-row">
+                    <label class="stecho-check-label" title="勾选后总结使用下方自定义API；不勾选则使用酒馆主聊天LLM">
+                        <input type="checkbox" id="stecho_api_enabled" /> 启用自定义API
+                    </label>
+                </div>
+                <div id="stecho_api_details">
+                    <div class="stecho-field">
+                        <label class="stecho-field-label">API 地址</label>
+                        <input id="stecho_api_url" class="stecho-input text_pole" type="text" placeholder="http://127.0.0.1:8080/v1" />
+                    </div>
+                    <div class="stecho-field">
+                        <label class="stecho-field-label">密钥</label>
+                        <div class="stecho-key-row">
+                            <input id="stecho_api_key" class="stecho-input text_pole" type="password" placeholder="sk-..." autocomplete="off" />
+                            <button id="stecho_api_key_toggle" class="stecho-icon-btn" title="显示 / 隐藏密钥">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="stecho-field">
+                        <label class="stecho-field-label">模型名（可选）</label>
+                        <input id="stecho_api_model" class="stecho-input text_pole" type="text" list="stecho_api_models" placeholder="留空则由服务端默认" />
+                        <datalist id="stecho_api_models"></datalist>
+                    </div>
+                    <div class="stecho-row">
+                        <button id="stecho_api_connect" class="menu_button">连接</button>
+                        <span id="stecho_api_status" class="stecho-hint"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ 第三层：🎛采样参数设置（折叠） ============ -->
+            <div class="stecho-section stecho-folded" id="stecho_section_sampling">
+                <div class="stecho-section-title" title="点击展开 / 收起">🎛 采样参数设置</div>
+                <div class="stecho-hint" style="margin-bottom:6px">滑动到最左（OFF）表示不设置、不传给总结API。</div>
+                <div id="stecho_sampling_sliders"></div>
+            </div>
+
+            <!-- ============ 第四层：🔧正则 ============ -->
+            <div class="stecho-section" id="stecho_section_regex">
+                <div class="stecho-section-title">🔧 正则</div>
+                <div class="stecho-row">
+                    <label class="stecho-check-label" title="只作用于发送给总结API的楼层内容，不影响聊天记录与显示">
+                        <input type="checkbox" id="stecho_regex_enabled" /> 启用正则
+                    </label>
+                </div>
+                <div id="stecho_regex_details">
+                    <div class="stecho-hint" style="margin:4px 0 10px">以下正则只作用于发送给总结API的楼层内容，不改变聊天记录，不影响酒馆自身的正则。</div>
+                    <div id="stecho_regex_list"></div>
+                    <div class="stecho-row" style="margin-top:6px">
+                        <button id="stecho_regex_new" class="menu_button">新建正则条目</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ 第五层：📥注入模板 ============ -->
+            <div class="stecho-section" id="stecho_section_injection">
+                <div class="stecho-section-title">📥 注入模板</div>
+                <div class="stecho-field">
+                    <label class="stecho-field-label">记忆注入位置</label>
+                    <select id="stecho_injection_position" class="stecho-select text_pole">
+                        <option value="none">不注入</option>
+                        <option value="beforeMain">↑Main Prompt（主提示词之前）</option>
+                        <option value="afterMain">↓Main Prompt（主提示词之后）</option>
+                        <option value="beforeHistory">↑Chat History（聊天记录之前）</option>
+                        <option value="afterHistory">↓Chat History（聊天记录之后）</option>
+                        <option value="depth">@Depth（对话中指定深度）</option>
+                    </select>
+                </div>
+                <div class="stecho-field" id="stecho_injection_depth_field" style="display:none">
+                    <label class="stecho-field-label">注入深度（0 = 最后一条消息之后，1 = 之前，依此类推）</label>
+                    <input type="number" id="stecho_injection_depth" class="stecho-input text_pole" min="0" value="1" />
+                </div>
+                <div class="stecho-field">
+                    <label class="stecho-field-label">记忆注入提示词（用 {{echo}} 引用当前聊天的小总结池）</label>
+                    <textarea id="stecho_injection_template" class="stecho-input" rows="4"></textarea>
+                </div>
+            </div>
+
+            <!-- ============ 第六层：📝小总结设置（折叠） ============ -->
+            <div class="stecho-section" id="stecho_section_small">
+                <div class="stecho-section-title" title="点击展开 / 收起">📝 小总结设置</div>
+
+                <!-- 6.1 提示词管理 -->
+                <div class="stecho-subblock">
+                    <div class="stecho-row" style="justify-content:space-between">
+                        <b>小总结自定义提示词</b>
+                        <div class="stecho-icon-btns">
+                            <button id="stecho_prompt_new" class="stecho-icon-btn" title="新建条目"><i class="fa-solid fa-circle-plus"></i></button>
+                            <button id="stecho_prompt_save" class="stecho-icon-btn" title="保存提示词与开关、排序"><i class="fa-solid fa-floppy-disk"></i></button>
+                        </div>
+                    </div>
+                    <div id="stecho_prompt_list"></div>
+                </div>
+
+                <!-- 6.2 / 6.2b 隐藏开关 -->
+                <div class="stecho-subblock">
+                    <div class="stecho-row">
+                        <label class="stecho-check-label" title="隐藏的消息人仍可见，但不会发给主LLM">
+                            <input type="checkbox" id="stecho_autohide" /> 自动隐藏已总结的消息
+                        </label>
+                    </div>
+                    <div class="stecho-row">
+                        <label class="stecho-check-label" title="临时把已隐藏的楼层恢复显示（发给主LLM），不影响统计">
+                            <input type="checkbox" id="stecho_show_hidden" /> 临时显示已隐藏的楼层
+                        </label>
+                    </div>
+                    <div id="stecho_temp_show_details" style="display:none">
+                        <div class="stecho-row" style="padding-left:22px">
+                            <label class="stecho-check-label">
+                                <input type="checkbox" id="stecho_temp_show_all" checked /> 所有
+                            </label>
+                        </div>
+                        <div class="stecho-row" style="padding-left:22px">
+                            <span>或指定区间</span>
+                            <input type="number" id="stecho_temp_show_start" class="stecho-input text_pole" min="0" value="0" style="max-width:80px" disabled />
+                            <span>~</span>
+                            <input type="number" id="stecho_temp_show_end" class="stecho-input text_pole" min="0" value="0" style="max-width:80px" disabled />
+                        </div>
+                    </div>
+
+                    <!-- 6.3 自动小总结 -->
+                    <div class="stecho-row">
+                        <label class="stecho-check-label">
+                            <input type="checkbox" id="stecho_auto_enabled" /> 自动小总结
+                        </label>
+                    </div>
+                    <div id="stecho_auto_details" style="display:none">
+                        <div class="stecho-row">
+                            <span>每</span>
+                            <input type="range" id="stecho_auto_interval" min="5" max="200" value="50" style="flex-grow:1" />
+                            <span><b id="stecho_auto_interval_val">50</b> 条消息总结一次</span>
+                        </div>
+                        <div id="stecho_auto_suspended" class="stecho-row" style="display:none">
+                            <span style="color:var(--fullred)">自动总结已暂停：<span id="stecho_auto_fail_reason"></span></span>
+                            <button id="stecho_auto_resume" class="menu_button">恢复</button>
+                        </div>
+                    </div>
+
+                    <!-- 6.4 统计 -->
+                    <div class="stecho-row" style="margin-top:6px"><span id="stecho_stats" class="stecho-hint">尚未总结</span></div>
+                </div>
+
+                <!-- 6.5 手动小总结 -->
+                <div class="stecho-subblock">
+                    <div class="stecho-row">
+                        <input type="number" id="stecho_manual_start" class="stecho-input text_pole" min="0" placeholder="起" style="max-width:90px" />
+                        <span>~</span>
+                        <input type="number" id="stecho_manual_end" class="stecho-input text_pole" min="0" placeholder="止" style="max-width:90px" />
+                        <button id="stecho_manual_run" class="menu_button">小总结</button>
+                    </div>
+                    <div class="stecho-hint" id="stecho_manual_token" style="margin-bottom:10px">所选内容 token 数：—</div>
+                    <div class="stecho-field stecho-divider-top" style="margin-top:12px">
+                        <label class="stecho-field-label-bold">可见楼层保护</label>
+                        <div class="stecho-row">
+                            <span>总结后至少保留最近</span>
+                            <input type="number" id="stecho_protection_n" class="stecho-input text_pole" min="0" style="max-width:60px" />
+                            <span>条消息可见</span>
+                            <span class="stecho-hint">（防止旧楼全被隐藏后只剩摘要）</span>
+                        </div>
+                    </div>
+                    <div class="stecho-field stecho-divider-top">
+                        <label class="stecho-field-label-bold">防懒提示</label>
+                        <div class="stecho-row">
+                            <span>当前未隐藏的消息达到</span>
+                            <input type="number" id="stecho_lazy_threshold" class="stecho-input text_pole" min="0" style="max-width:60px" />
+                            <span>楼提示一次</span>
+                            <span class="stecho-hint">（0 = 关闭）</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6.6 预览 -->
+                <div class="stecho-subblock">
+                    <div class="stecho-field">
+                        <label class="stecho-field-label-bold">小总结预览 <span class="stecho-hint" style="font-weight:normal">（可直接编辑，保存后进小总结池）</span></label>
+                        <textarea id="stecho_preview" class="stecho-input" rows="6"></textarea>
+                        <div class="stecho-row" style="justify-content:flex-start;margin-top:4px">
+                            <button id="stecho_preview_regen" class="stecho-icon-btn" title="重说：根据同样的内容重新总结"><i class="fa-solid fa-rotate-right"></i></button>
+                            <span class="stecho-history-wrap" title="生成历史">
+                                <button id="stecho_preview_history" class="stecho-icon-btn"><i class="fa-regular fa-clock"></i></button>
+                                <span id="stecho_history_badge" class="stecho-badge" style="display:none">2</span>
+                            </span>
+                            <button id="stecho_preview_save" class="stecho-icon-btn" title="保存进小总结池"><i class="fa-solid fa-floppy-disk"></i></button>
+                            <button id="stecho_preview_discard" class="stecho-icon-btn stecho-danger" title="删除本次预览（不进池，楼层不记为已总结）"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6.7 池与标签 -->
+                <div class="stecho-subblock">
+                    <div class="stecho-row">
+                        <span>标签筛选</span>
+                        <div class="stecho-dropdown" id="stecho_tag_filter_dd" style="flex-grow:1">
+                            <button type="button" class="stecho-dropdown-bar stecho-input text_pole">
+                                <span class="dd-label">全部（不筛选）</span>
+                                <i class="fa-solid fa-caret-down"></i>
+                            </button>
+                            <div class="stecho-dropdown-list" style="display:none"></div>
+                        </div>
+                    </div>
+                    <textarea id="stecho_pool" class="stecho-input" rows="8" style="width:100%;margin:4px 0"></textarea>
+                    <div class="stecho-row" style="justify-content:space-between">
+                        <div class="stecho-row" style="margin:0">
+                            <button id="stecho_pool_big" class="menu_button" title="将当前小总结池的内容进行大总结">进行大总结</button>
+                            <label class="stecho-check-label" title="开启后池变为只读分段视图，每条摘要上方标注其对应楼层；标注只是显示，不写进池内容">
+                                显示楼层标注 <input type="checkbox" id="stecho_pool_markers" />
+                            </label>
+                        </div>
+                        <button id="stecho_pool_save" class="menu_button">保存</button>
+                    </div>
+                </div>
+
+                <!-- 标签设置 -->
+                <div class="stecho-subblock">
+                    <div class="stecho-row" style="justify-content:space-between">
+                        <b>标签设置</b>
+                        <button id="stecho_tag_new" class="menu_button">新建标签</button>
+                    </div>
+                    <div class="stecho-hint">标签用于筛选查看摘要；一个标签可设多个关键词，摘要行命中任一词即归入。</div>
+                    <div id="stecho_tag_list"></div>
+                </div>
+            </div>
+
+            <!-- ============ 第七层：🗂大总结设置（折叠） ============ -->
+            <div class="stecho-section" id="stecho_section_big">
+                <div class="stecho-section-title" title="点击展开 / 收起">🗂 大总结设置</div>
+
+                <!-- 7.1 自动大总结 -->
+                <div class="stecho-subblock">
+                    <div class="stecho-row">
+                        <label class="stecho-check-label" title="小总结池达到条件后自动进行大总结">
+                            <input type="checkbox" id="stecho_big_auto_enabled" /> 启用自动大总结
+                        </label>
+                    </div>
+                    <div id="stecho_big_auto_details" style="display:none">
+                        <div class="stecho-row">
+                            <span>当小总结池的</span>
+                            <select id="stecho_big_auto_metric" class="stecho-select text_pole" style="flex-grow:0">
+                                <option value="chars">总字符数</option>
+                                <option value="items">列表符条数（行首 - 或 *）</option>
+                            </select>
+                            <span>达到</span>
+                            <input type="number" id="stecho_big_auto_threshold" class="stecho-input text_pole" min="1" style="max-width:100px" />
+                            <span>时自动大总结一次</span>
+                        </div>
+                        <div id="stecho_big_auto_suspended" class="stecho-row" style="display:none">
+                            <span style="color:var(--fullred)">自动大总结已暂停：<span id="stecho_big_auto_fail_reason"></span></span>
+                            <button id="stecho_big_auto_resume" class="menu_button">恢复</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 7.2 大总结提示词管理 -->
+                <div class="stecho-subblock">
+                    <div class="stecho-row" style="justify-content:space-between">
+                        <b>大总结自定义提示词</b>
+                        <div class="stecho-icon-btns">
+                            <button id="stecho_big_prompt_new" class="stecho-icon-btn" title="新建条目"><i class="fa-solid fa-circle-plus"></i></button>
+                            <button id="stecho_big_prompt_save" class="stecho-icon-btn" title="保存提示词与开关、排序"><i class="fa-solid fa-floppy-disk"></i></button>
+                        </div>
+                    </div>
+                    <div id="stecho_big_prompt_list"></div>
+                </div>
+
+                <!-- 保存目标条目（自定义提示词下面、预览框上面） -->
+                <div class="stecho-field stecho-subblock" id="stecho_big_entry_field" style="margin-top:14px">
+                    <label class="stecho-field-label-bold">保存到世界书条目</label>
+                    <div class="stecho-row">
+                        <select id="stecho_big_entry" class="stecho-select text_pole" style="flex-grow:1"></select>
+                    </div>
+                    <div class="stecho-row" style="justify-content:space-between">
+                        <span class="stecho-hint">保存时追加到所选条目（旧内容在上，新内容在下）；条目创建后，你在世界书里改的开关/关键词/位置不会被插件覆盖。</span>
+                        <span id="stecho_big_entry_chars" class="stecho-hint"></span>
+                    </div>
+                </div>
+
+                <!-- 7.3 大总结预览 -->
+                <div class="stecho-subblock">
+                    <div class="stecho-field">
+                        <label class="stecho-field-label-bold">大总结预览 <span class="stecho-hint" style="font-weight:normal">（满意后保存进世界书，并清空小总结池）</span></label>
+                        <textarea id="stecho_big_preview" class="stecho-input" rows="6"></textarea>
+                        <div class="stecho-row" style="justify-content:flex-start;margin-top:4px">
+                            <button id="stecho_big_preview_regen" class="stecho-icon-btn" title="重说：根据同样的内容重新总结"><i class="fa-solid fa-rotate-right"></i></button>
+                            <span class="stecho-history-wrap" title="生成历史">
+                                <button id="stecho_big_preview_history" class="stecho-icon-btn"><i class="fa-regular fa-clock"></i></button>
+                                <span id="stecho_big_history_badge" class="stecho-badge" style="display:none">2</span>
+                            </span>
+                            <button id="stecho_big_preview_save" class="stecho-icon-btn" title="保存：追加进世界书条目并清空小总结池"><i class="fa-solid fa-floppy-disk"></i></button>
+                            <button id="stecho_big_preview_discard" class="stecho-icon-btn stecho-danger" title="删除本次预览（不进世界书，池保持原样）"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

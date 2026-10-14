@@ -1,0 +1,464 @@
+/* =========================
+Copyright (c) 2026 Thirteen-Moons
+Licensed under AGPL-3.0; see LICENSE for full terms
+Derivative works must retain attribution to Thirteen-Moons
+v1.0.0
+========================= */
+
+/**
+ * ST-Echos 样式。
+ * 约定：
+ *  - 全部使用酒馆主题变量（--SmartTheme*），随主题切换自动变色；
+ *  - 所有类名以 stecho- 前缀，避免污染酒馆和其他扩展；
+ *  - 板块底色 = 主题模糊底色叠一层极淡黑色，视觉上与面板背景区分开。
+ */
+
+.stecho-container {
+    margin: 4px 0;
+}
+
+/* ---- 板块 ---- */
+.stecho-section {
+    background-color: var(--SmartThemeBlurTintColor);
+    background-image: linear-gradient(rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.12));
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin: 8px 0;
+}
+
+.stecho-section-title {
+    font-size: 1.05em;
+    font-weight: bold;
+    color: var(--SmartThemeTextColor, inherit);
+    margin-bottom: 6px;
+    user-select: none;
+}
+
+/* 板块折叠：点标题收起/展开（收起时只留标题） */
+.stecho-section-title {
+    cursor: pointer;
+}
+
+.stecho-section-title::after {
+    content: ' ▼';
+    font-size: 0.8em;
+    opacity: 0.6;
+}
+
+.stecho-section.stecho-folded .stecho-section-title::after {
+    content: ' ▲';
+}
+
+.stecho-section.stecho-folded > :not(.stecho-section-title) {
+    display: none;
+}
+
+/* ---- 通用行与小字说明 ---- */
+.stecho-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 4px 0;
+    flex-wrap: wrap;
+}
+
+/* 行内的酒馆按钮默认 width:100%，在 flex 行里会被压成竖条，改回自适应 */
+.stecho-row .menu_button {
+    width: auto;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.stecho-hint {
+    font-size: 0.85em;
+    opacity: 0.7;
+}
+
+.stecho-select,
+.stecho-input {
+    background-color: var(--black30a);
+    color: var(--SmartThemeTextColor, inherit);
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 4px;
+    padding: 4px 6px;
+    flex-grow: 1;
+    min-width: 0;
+}
+
+/* ---- 图标按钮组 ---- */
+.stecho-icon-btns {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.stecho-icon-btn {
+    background-color: var(--black30a);
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 4px;
+    color: var(--SmartThemeTextColor, inherit);
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.stecho-icon-btn:hover {
+    background-color: var(--white30a);
+}
+
+.stecho-icon-btn.stecho-danger:hover {
+    background-color: var(--fullred);
+    color: white;
+}
+
+/* ---- 勾选框标签 ---- */
+.stecho-check-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    user-select: none;
+}
+
+/* ---- 字段块（标签在上，控件在下） ---- */
+.stecho-field {
+    margin: 6px 0;
+}
+
+.stecho-field-label {
+    display: block;
+    font-size: 0.9em;
+    margin-bottom: 2px;
+}
+
+.stecho-key-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+/* ---- 采样滑块 ---- */
+.stecho-slider-row {
+    margin: 6px 0;
+}
+
+.stecho-slider-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 2px;
+}
+
+.stecho-slider-name {
+    font-size: 0.95em;
+}
+
+.stecho-slider-name .stecho-hint {
+    margin-left: 4px;
+}
+
+.stecho-slider-val {
+    font-size: 0.9em;
+    min-width: 48px;
+    text-align: right;
+}
+
+.stecho-slider-row input[type='range'] {
+    width: 100%;
+    margin: 0;
+}
+
+/* ---- 子板块 ---- */
+.stecho-subblock {
+    border-top: 1px dashed var(--SmartThemeBorderColor);
+    padding-top: 8px;
+    margin-top: 14px;
+}
+
+.stecho-subblock:first-of-type {
+    border-top: none;
+    padding-top: 0;
+    margin-top: 4px;
+}
+
+/* 加粗字段标题（可见楼层保护/防懒提示/小总结预览等） */
+.stecho-field-label-bold {
+    display: block;
+    font-weight: bold;
+    margin: 8px 0 4px;
+}
+
+/* 字段组顶部分隔线（防懒提示等） */
+.stecho-divider-top {
+    border-top: 1px dashed var(--SmartThemeBorderColor);
+    padding-top: 8px;
+    margin-top: 12px;
+}
+
+/* ---- 自定义多选下拉（标签筛选） ---- */
+.stecho-dropdown {
+    position: relative;
+}
+
+.stecho-dropdown-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    width: 100%;
+    cursor: pointer;
+    text-align: left;
+}
+
+.stecho-dropdown-bar .dd-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.stecho-dropdown-list {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background-color: var(--SmartThemeBlurTintColor);
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 6px;
+    max-height: 220px;
+    overflow-y: auto;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.stecho-dropdown-list label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.stecho-dropdown-list label:hover {
+    background-color: var(--white30a);
+}
+
+/* ---- 生成历史角标 ---- */
+.stecho-history-wrap {
+    position: relative;
+    display: inline-flex;
+}
+
+.stecho-badge {
+    position: absolute;
+    right: -4px;
+    bottom: -4px;
+    background-color: var(--SmartThemeQuoteColor, var(--SmartThemeBorderColor));
+    color: var(--SmartThemeBlurTintColor, #fff);
+    font-size: 10px;
+    line-height: 1;
+    border-radius: 8px;
+    padding: 2px 4px;
+    pointer-events: none;
+}
+
+/* 生成历史列表 */
+.stecho-history-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px 8px;
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 6px;
+    margin: 4px 0;
+    cursor: pointer;
+    background-color: var(--black30a);
+}
+
+.stecho-history-item:hover {
+    background-color: var(--white30a);
+}
+
+.stecho-history-item.current {
+    border-color: var(--SmartThemeQuoteColor, var(--SmartThemeBorderColor));
+}
+
+/* ---- 条目列表（正则/提示词共用） ---- */
+.stecho-entry-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.stecho-entry {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background-color: var(--black30a);
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 6px;
+    padding: 4px 6px;
+}
+
+.stecho-entry-gray {
+    opacity: 0.45;
+}
+
+.stecho-entry-dragover {
+    border-color: var(--SmartThemeQuoteColor, var(--SmartThemeBorderColor));
+}
+
+.stecho-entry-grip {
+    cursor: grab;
+    opacity: 0.5;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.stecho-entry-order {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    flex-shrink: 0;
+}
+
+.stecho-order-btn {
+    background: none;
+    border: none;
+    color: var(--SmartThemeTextColor, inherit);
+    font-size: 9px;
+    line-height: 1;
+    padding: 1px 3px;
+    cursor: pointer;
+    opacity: 0.7;
+}
+
+.stecho-order-btn:disabled {
+    opacity: 0.2;
+    cursor: default;
+}
+
+.stecho-entry-icon {
+    flex-shrink: 0;
+    opacity: 0.8;
+}
+
+.stecho-entry-name {
+    flex-grow: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.stecho-entry-btns {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.stecho-entry-btns .stecho-icon-btn {
+    width: 26px;
+    height: 26px;
+}
+
+/* ---- 开关（条目右侧） ---- */
+.stecho-switch {
+    position: relative;
+    display: inline-block;
+    width: 36px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.stecho-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.stecho-switch-slider {
+    position: absolute;
+    inset: 0;
+    background-color: var(--black30a);
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 20px;
+    transition: 0.15s;
+    cursor: pointer;
+}
+
+.stecho-switch-slider::before {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    left: 2px;
+    top: 2px;
+    border-radius: 50%;
+    background-color: var(--SmartThemeTextColor, #ccc);
+    transition: 0.15s;
+}
+
+.stecho-switch input:checked + .stecho-switch-slider {
+    background-color: var(--SmartThemeQuoteColor, var(--SmartThemeBorderColor));
+    border-color: var(--SmartThemeQuoteColor, var(--SmartThemeBorderColor));
+}
+
+.stecho-switch input:checked + .stecho-switch-slider::before {
+    transform: translateX(16px);
+    background-color: var(--SmartThemeBlurTintColor, #fff);
+}
+
+/* ---- 正则编辑器弹窗内容 ---- */
+.stecho-regex-editor textarea.stecho-input {
+    width: 100%;
+    resize: vertical;
+}
+
+.stecho-regex-test pre {
+    background-color: var(--black30a);
+    border-radius: 4px;
+    padding: 6px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    min-height: 80px;
+    max-height: 150px;
+    overflow-y: auto;
+    margin: 6px 0 0;
+}
+
+/* PC 隐藏▲▼（用拖拽），移动端隐藏把手 */
+@media (min-width: 769px) {
+    .stecho-entry-order {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .stecho-entry-grip {
+        display: none;
+    }
+}
+
+/* ---- 移动端 ---- */
+@media (max-width: 768px) {
+    .stecho-row {
+        flex-wrap: wrap;
+    }
+
+    .stecho-select,
+    .stecho-input {
+        width: 100%;
+        flex-basis: 100%;
+    }
+
+    .stecho-icon-btns {
+        margin-left: auto;
+    }
+}
