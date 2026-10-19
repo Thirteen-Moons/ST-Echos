@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Thirteen-Moons
 // Licensed under AGPL-3.0; see LICENSE for full terms
 // Derivative works must retain attribution to Thirteen-Moons
-// v1.0.0
+// v1.0.1
 
 /**
  * ST-Echos 通用可排序条目列表（正则条目、提示词条目共用）。
@@ -30,9 +30,10 @@ export function renderEntryList(args) {
 
     entries.forEach((entry, index) => {
         const icon = options.iconField ? (entry[options.iconField] || 'fa-rectangle-list') : 'fa-rectangle-list';
-        const locked = options.lockedIds ? options.lockedIds.has(entry.id) : false;
+        const locked = options.lockedIds ? options.lockedIds.has(entry.id) : false; // 锁定=不可删除
         const gray = options.grayOut ? options.grayOut(entry) : false;
-        const draggable = !locked && !(options.dragExclude && options.dragExclude(entry));
+        // 拖拽只由 dragExclude 决定（首条系统提示词）；锁定条目（占位/Chat History）仍可拖拽排序
+        const draggable = !(options.dragExclude && options.dragExclude(entry));
         const $row = $(`
             <div class="stecho-entry ${gray ? 'stecho-entry-gray' : ''}" data-id="${entry.id}" ${draggable ? 'draggable="true"' : ''}>
                 <span class="stecho-entry-grip" title="拖拽排序">⋮⋮</span>
