@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Thirteen-Moons
 // Licensed under AGPL-3.0; see LICENSE for full terms
 // Derivative works must retain attribution to Thirteen-Moons
-// v1.0.0
+// v1.0.1
 
 /**
  * ST-Echos 面板 UI 绑定。
@@ -368,6 +368,7 @@ async function openPromptEditor(existingId) {
 
     const $editor = $(`
         <div class="stecho-prompt-editor">
+            <div class="stecho-hint" style="margin-bottom:6px">系统身份的条目会合并为一条 system 消息、固定置于最前（OpenAI 兼容端点惯例）；拖拽排序在用户/助手条目之间生效。Chat History 条目内容=所有未隐藏的聊天记录。</div>
             <div class="stecho-field">
                 <label class="stecho-field-label">名称</label>
                 <input type="text" class="pe-name stecho-input text_pole" ${isChatHistory ? 'disabled' : ''} />
@@ -1025,7 +1026,7 @@ export function afterSmallSaved() {
 
 function renderBigPromptList() {
     const entries = getCurrentSettings().bigSummary.promptEntries;
-    const lockedIds = new Set(entries.filter(e => e.isSystemFirst).map(e => e.id));
+    const lockedIds = new Set(entries.filter(e => e.isSystemFirst || e.isPool).map(e => e.id));
     renderEntryList({
         $container: $('#stecho_big_prompt_list'),
         entries,
@@ -1055,7 +1056,7 @@ function renderBigPromptList() {
     $('#stecho_big_prompt_list .stecho-entry').each(function () {
         const id = $(this).data('id');
         const e = entries.find(x => x.id === id);
-        if (e) $(this).find('.stecho-entry-icon').attr('class', `fa-solid ${PROMPT_ICONS[e.role] || 'fa-rectangle-list'} stecho-entry-icon`);
+        if (e) $(this).find('.stecho-entry-icon').attr('class', `fa-solid ${e.isPool ? 'fa-layer-group' : (PROMPT_ICONS[e.role] || 'fa-rectangle-list')} stecho-entry-icon`);
     });
 }
 
@@ -1064,23 +1065,25 @@ async function openBigPromptEditor(existingId) {
     const existing = entries.find(e => e.id === existingId);
     if (!existing) return;
     const isFirstSystem = !!existing.isSystemFirst;
+    const isPool = !!existing.isPool;
     const $editor = $(`
         <div class="stecho-prompt-editor">
+            ${isPool ? '<div class="stecho-hint" style="margin-bottom:6px">此条目代表小总结池全文：内容不可编辑；大总结时池内容以 user 身份插入在该条目所在位置，可用开关停发、拖拽/▲▼移动。</div>' : ''}
             <div class="stecho-field">
                 <label class="stecho-field-label">名称</label>
-                <input type="text" class="pe-name stecho-input text_pole" />
+                <input type="text" class="pe-name stecho-input text_pole" ${isPool ? 'disabled' : ''} />
             </div>
             <div class="stecho-field">
                 <label class="stecho-field-label">身份</label>
-                <select class="pe-role stecho-select text_pole" ${isFirstSystem ? 'disabled' : ''}>
-                    <option value="system">系统（以真正的 system 身份发送）</option>
+                <select class="pe-role stecho-select text_pole" ${(isFirstSystem || isPool) ? 'disabled' : ''}>
+                    <option value="system">系统（合并为一条 system 消息置于最前）</option>
                     <option value="user">用户</option>
                     <option value="assistant">助手</option>
                 </select>
             </div>
             <div class="stecho-field">
                 <label class="stecho-field-label">内容</label>
-                <textarea class="pe-content stecho-input" rows="8"></textarea>
+                <textarea class="pe-content stecho-input" rows="8" ${isPool ? 'disabled' : ''} placeholder="${isPool ? '此条目自动填入小总结池全文，不可编辑' : ''}"></textarea>
             </div>
         </div>`);
     $editor.find('.pe-name').val(existing.name || '');
@@ -1088,9 +1091,11 @@ async function openBigPromptEditor(existingId) {
     $editor.find('.pe-content').val(existing.content || '');
     const ok = await callGenericPopup($editor, POPUP_TYPE.CONFIRM, '', { okButton: '保存', cancelButton: '取消', allowVerticalScrolling: true });
     if (!ok) return;
-    existing.name = String($editor.find('.pe-name').val()).trim() || '未命名';
-    existing.content = String($editor.find('.pe-content').val());
-    if (!isFirstSystem) existing.role = String($editor.find('.pe-role').val());
+    if (!isPool) {
+        existing.name = String($editor.find('.pe-name').val()).trim() || '未命名';
+        existing.content = String($editor.find('.pe-content').val());
+    }
+    if (!isFirstSystem && !isPool) existing.role = String($editor.find('.pe-role').val());
     saveSettings(); markDirty('bigPrompt'); renderBigPromptList();
 }
 
