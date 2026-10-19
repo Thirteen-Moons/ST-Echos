@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Thirteen-Moons
 // Licensed under AGPL-3.0; see LICENSE for full terms
 // Derivative works must retain attribution to Thirteen-Moons
-// v1.0.0
+// v1.0.1
 
 /**
  * ST-Echos 提示词组装。
@@ -118,12 +118,28 @@ export function buildSummaryMessages(entries, floorMessages, forCustomApi) {
     return messages;
 }
 
-/** 大总结的组装：system 条目合并置顶，池全文作为第一条 user 消息，其余条目随后 */
+/**
+ * 大总结的组装：按条目顺序产出消息。
+ *  - system 条目合并置顶（OpenAI 兼容端点惯例，只认开头一条 system）；
+ *  - "小总结池内容"占位条目（isPool）在其所在位置插入池全文（user 身份）；
+ *  - 占位关闭则池不发送；条目组里没有占位（旧数据）时默认池跟在 system 之后，行为不变。
+ */
 export function buildBigSummaryMessages(entries, poolText) {
     const rest = [];
     const systemParts = [];
+    let poolPlaced = false;
+    let hasPoolEntry = false;
     for (const entry of entries || []) {
-        if (!entry || !entry.enabled || entry.isChatHistory) continue;
+        if (!entry || entry.isChatHistory) continue;
+        if (entry.isPool) {
+            hasPoolEntry = true;
+            if (entry.enabled && poolText && poolText.trim()) {
+                rest.push({ role: 'user', content: poolText });
+                poolPlaced = true;
+            }
+            continue;
+        }
+        if (!entry.enabled) continue;
         const content = substituteParams(entry.content || '').trim();
         if (!content) continue;
         if (entry.role === 'system') systemParts.push(content);
@@ -131,7 +147,7 @@ export function buildBigSummaryMessages(entries, poolText) {
     }
     const messages = [];
     if (systemParts.length) messages.push({ role: 'system', content: systemParts.join('\n\n') });
-    if (poolText && poolText.trim()) messages.push({ role: 'user', content: poolText });
+    if (!hasPoolEntry && poolText && poolText.trim()) messages.push({ role: 'user', content: poolText }); // 旧数据无占位：保持原行为
     messages.push(...rest);
     return messages;
 }
