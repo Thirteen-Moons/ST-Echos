@@ -112,6 +112,21 @@ export function defaultSystemEntry() {
     };
 }
 
+/** 默认的小总结池占位条目（大总结用：不可编辑内容，可开关/拖拽决定池内容插入位置） */
+export function defaultBigPoolEntry() {
+    return {
+        id: uid(),
+        name: '小总结池内容',
+        role: 'user',
+        position: 'relative',
+        depth: 0,
+        content: '',
+        enabled: true,
+        isPool: true,
+        locked: true,
+    };
+}
+
 /** 默认的 Chat History 占位条目（不可编辑内容，只参与排序与定位） */
 export function defaultChatHistoryEntry() {
     return {
@@ -153,7 +168,7 @@ export function defaultPanelSettings() {
         },
         bigSummary: {
             auto: { enabled: false, metric: 'chars', threshold: 5000, suspended: false },
-            promptEntries: [{ ...defaultSystemEntry(), content: DEFAULT_BIG_PROMPT }],
+            promptEntries: [{ ...defaultSystemEntry(), content: DEFAULT_BIG_PROMPT }, defaultBigPoolEntry()],
         },
         tags: [],
         lorebookName: '',
@@ -193,6 +208,14 @@ export function loadSettings() {
     }
     fillDefaultPrompts(store.custom);
     for (const name of Object.keys(store.presets)) fillDefaultPrompts(store.presets[name]);
+    // 旧数据迁移：大总结条目组里补"小总结池内容"占位（放在系统条目之后）
+    const ensurePool = (panel) => {
+        const entries = panel.bigSummary && panel.bigSummary.promptEntries;
+        if (!entries || entries.some(e => e.isPool)) return;
+        entries.splice(1, 0, defaultBigPoolEntry());
+    };
+    ensurePool(store.custom);
+    for (const name of Object.keys(store.presets)) ensurePool(store.presets[name]);
     return store;
 }
 
