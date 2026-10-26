@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Thirteen-Moons
 // Licensed under AGPL-3.0; see LICENSE for full terms
 // Derivative works must retain attribution to Thirteen-Moons
-// v1.0.1
+// v1.0.2
 
 /**
  * ST-Echos 小总结核心流程。
@@ -47,8 +47,8 @@ export async function runSmallSummary(start, end, { source = 'manual' } = {}) {
     const floorCountAtStart = (ctx.chat || []).length;
     const s = getCurrentSettings();
 
-    const floors = getFloors(start, end);
-    if (!floors.length) throw new SummaryError('所选区间没有可总结的楼层', 'empty-range');
+    const { floors } = getFloors(start, end);
+    if (!floors.length) throw new SummaryError('所选区间没有可总结的楼层（可能全被手动隐藏）', 'empty-range');
     const messages = buildSummaryMessages(s.smallSummary.promptEntries, floorsToMessages(floors), s.customApi.enabled);
     console.debug('[ST-Echos] 总结请求 messages:', JSON.parse(JSON.stringify(messages)));
 
@@ -149,13 +149,15 @@ export async function saveSmallSummary() {
         resumed = true;
     }
 
-    // 自动隐藏（6.2）：记录永远写入；"临时显示已隐藏的楼层"勾选期间只记不藏（规格：记录照常更新，取消勾选后按记录恢复）
+    // 自动隐藏（6.2）：记录永远写入；"临时显示已隐藏的楼层"勾选期间只记不藏（规格：记录照常更新，取消勾选后按记录恢复）。
+    // skipped 在保存时按当前状态现算（不随生成时快照持久化）——删除楼层等变动已由区间平移处理，现算天然对齐。
     if (s.smallSummary.autoHide) {
         const defer = s.smallSummary.showHiddenOverride;
-        await hideFloors(data, start, end, { deferApply: defer });
+        const skippedNow = getFloors(start, end).skipped;
+        const chunks = await hideFloors(data, start, end, { deferApply: defer, exclude: skippedNow });
         if (defer) {
             // 显式记下"只记未藏"的楼层（不能用 is_system 反推——"所有"模式下已藏楼层也可见，会自我强化）
-            runtime.deferredHidden = mergeRanges([...runtime.deferredHidden, [start, end]]);
+            runtime.deferredHidden = mergeRanges([...runtime.deferredHidden, ...chunks]);
         }
         saveChatData(); // deferApply 分支不会触发 saveChat，这里补一次落盘
     }
