@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Thirteen-Moons
 // Licensed under AGPL-3.0; see LICENSE for full terms
 // Derivative works must retain attribution to Thirteen-Moons
-// v1.0.1
+// v1.0.2
 
 /**
  * ST-Echos 面板 UI 绑定。
@@ -35,6 +35,7 @@ import { filterPoolText } from './tags.js';
 import { resolveWorldbookName, listSummaryEntries, createSummaryEntry, ENTRY_COMMENT_PREFIX } from './lorebook.js';
 import { applyVisibility } from './hide.js';
 import { getFloors } from './prompts.js';
+import { applyRegexToFloors } from './regex.js';
 import { eventSource, event_types, streamingProcessor } from '../../../../script.js';
 import { debounce } from '../../../utils.js';
 
@@ -473,12 +474,19 @@ async function updateManualTokenCount() {
     const e = parseInt($('#stecho_manual_end').val(), 10);
     const $label = $('#stecho_manual_token');
     if (isNaN(s) || isNaN(e) || e < s || s < 0) { $label.text('所选内容 token 数：—'); return; }
-    const floors = getFloors(s, e);
-    if (!floors.length) { $label.text('所选内容 token 数：—'); return; }
-    const text = floors.map(f => `${f.name}: ${f.mes}`).join('\n');
+    const { floors, skipped } = getFloors(s, e);
+    if (!floors.length) {
+        $label.text(skipped.length ? `所选区间的楼层均被手动隐藏（${skipped.length} 层），没有可发送的内容` : '所选内容 token 数：—');
+        return;
+    }
+    // 与实际发送保持一致：楼层正文先过正则，再拼名字计数
+    const settings = getCurrentSettings();
+    const processedMes = applyRegexToFloors(floors.map(f => f.mes), settings.regex.scripts, settings.regex.enabled);
+    const text = floors.map((f, i) => `${f.name}: ${processedMes[i]}`).join('\n');
     try {
         const n = await getContext().getTokenCountAsync(text);
-        $label.text(`所选内容 token 数：约 ${n}${n > 16000 ? '（偏大，注意总结API的上下文上限）' : ''}`);
+        const skipNote = skipped.length ? `（已跳过 ${skipped.length} 层手动隐藏）` : '';
+        $label.text(`所选内容 token 数：约 ${n}${skipNote}${n > 16000 ? '（偏大，注意总结API的上下文上限）' : ''}`);
     } catch {
         $label.text('所选内容 token 数：计算失败');
     }
@@ -943,6 +951,8 @@ export function maybeAutoTrigger() {
     const range = computableRange(data, s.protectionN);
     if (!range) return;
     if (range[1] - range[0] + 1 < s.auto.interval) return;
+    // 区间楼层若全被手动隐藏跳过，静默不触发（否则会在发请求前抛 empty-range 且反复弹错）
+    if (getFloors(range[0], range[1]).floors.length === 0) return;
     doSummarize(range[0], range[1], 'auto');
 }
 
