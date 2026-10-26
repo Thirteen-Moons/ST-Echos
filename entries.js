@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Thirteen-Moons
 // Licensed under AGPL-3.0; see LICENSE for full terms
 // Derivative works must retain attribution to Thirteen-Moons
-// v1.0.1
+// v1.0.2
 
 /**
  * ST-Echos 通用可排序条目列表（正则条目、提示词条目共用）。
