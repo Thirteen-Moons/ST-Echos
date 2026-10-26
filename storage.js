@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Thirteen-Moons
 // Licensed under AGPL-3.0; see LICENSE for full terms
 // Derivative works must retain attribution to Thirteen-Moons
-// v1.0.1
+// v1.0.0
 
 /**
  * ST-Echos 聊天级数据存取（chat_metadata.stecho）。
@@ -68,6 +68,24 @@ export function lastFloor() {
 }
 
 /* ============================== 区间工具 ============================== */
+
+/** 索引是否落在任一区间内（含端点） */
+export function isInRanges(index, ranges) {
+    return (ranges || []).some(([s, e]) => index >= s && index <= e);
+}
+
+/** [start,end] 剔除 excluded 索引后的连续子区间（用于"跳过手动隐藏的楼层不进隐藏记录"） */
+export function rangeMinusExcluded(start, end, excluded) {
+    const skip = new Set(excluded || []);
+    const out = [];
+    let cur = null;
+    for (let i = start; i <= end; i++) {
+        if (skip.has(i)) { cur = null; continue; }
+        if (cur) cur[1] = i;
+        else { cur = [i, i]; out.push(cur); }
+    }
+    return out;
+}
 
 /** 合并相邻/重叠区间，返回排序后的新区间数组 */
 export function mergeRanges(ranges) {
