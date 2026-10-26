@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Thirteen-Moons
 // Licensed under AGPL-3.0; see LICENSE for full terms
 // Derivative works must retain attribution to Thirteen-Moons
-// v1.0.1
+// v1.0.0
 
 /**
  * ST-Echos 提示词组装。
@@ -22,25 +22,37 @@ import { getContext } from '../../../extensions.js';
 import { substituteParams } from '../../../../script.js';
 import { applyRegexToFloors } from './regex.js';
 import { getCurrentSettings } from './settings.js';
+import { getChatData, isInRanges } from './storage.js';
 
 export const NARRATOR_TYPE = 'narrator';
 
 /** 取楼层区间 [start,end]（含），返回 {name, mes, isUser, isNarrator} 列表 */
+/** 取楼层区间 [start,end]（含两端），返回 { floors, skipped }。
+ *  过滤规则：is_system 但不是本插件隐藏的（不在 hiddenRanges）、也不是叙事者的楼层跳过
+ *  （用户/其他插件手动隐藏的，不发给总结API）；插件自己隐藏的保留（重总结需原文）；叙事者永不跳过。
+ *  skipped = 被跳过的楼层索引，保存时用于把它们排除出插件隐藏记录。 */
 export function getFloors(start, end) {
     const chat = getContext().chat || [];
-    const out = [];
+    const hidden = (getChatData().hiddenRanges || []);
+    const floors = [];
+    const skipped = [];
     for (let i = start; i <= end && i < chat.length; i++) {
         const m = chat[i];
         if (!m) continue;
-        out.push({
+        const narrator = m.extra && m.extra.type === NARRATOR_TYPE;
+        if (m.is_system && !narrator && !isInRanges(i, hidden)) {
+            skipped.push(i);
+            continue;
+        }
+        floors.push({
             index: i,
             name: m.name || '',
             mes: m.mes || '',
             isUser: !!m.is_user,
-            isNarrator: m.extra && m.extra.type === NARRATOR_TYPE,
+            isNarrator: narrator,
         });
     }
-    return out;
+    return { floors, skipped };
 }
 
 /**
