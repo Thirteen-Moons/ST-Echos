@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Thirteen-Moons
 // Licensed under AGPL-3.0; see LICENSE for full terms
 // Derivative works must retain attribution to Thirteen-Moons
-// v1.0.0
+// v1.0.2
 
 /**
  * ST-Echos 设置存储与预设管理。
