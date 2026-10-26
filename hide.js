@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Thirteen-Moons
 // Licensed under AGPL-3.0; see LICENSE for full terms
 // Derivative works must retain attribution to Thirteen-Moons
-// v1.0.1
+// v1.0.2
 
 /**
  * ST-Echos 楼层隐藏/恢复。
@@ -15,12 +15,8 @@
  */
 
 import { getContext } from '../../../extensions.js';
-import { mergeRanges } from './storage.js';
+import { mergeRanges, isInRanges, rangeMinusExcluded } from './storage.js';
 import { NARRATOR_TYPE } from './prompts.js';
-
-function isInRanges(index, ranges) {
-    return (ranges || []).some(([s, e]) => index >= s && index <= e);
-}
 
 function isNarrator(m) {
     return !!(m && m.extra && m.extra.type === NARRATOR_TYPE);
@@ -52,9 +48,14 @@ export async function applyVisibility(hiddenRanges, tempVisibleRanges) {
     if (changed) await ctx.saveChat();
 }
 
-/** 保存小总结成功后：并入 hiddenRanges；deferApply 时只记不藏（"临时显示"勾选期间），取消勾选后由 applyVisibility 按记录恢复 */
-export async function hideFloors(data, start, end, { deferApply = false } = {}) {
-    data.hiddenRanges = mergeRanges([...data.hiddenRanges, [start, end]]);
-    if (deferApply) return;
+/** 保存小总结成功后：把实际发送过的楼层并入 hiddenRanges；
+ *  exclude = 被跳过的（手动隐藏）楼层索引，不接管——它们保持用户隐藏状态，重总结也不会再发；
+ *  deferApply 时只记不藏（"临时显示"勾选期间），取消勾选后由 applyVisibility 按记录恢复。 */
+/** @returns {Array} 实际接管的楼层区间（供"临时显示"期间记 deferredHidden 使用） */
+export async function hideFloors(data, start, end, { deferApply = false, exclude = [] } = {}) {
+    const chunks = rangeMinusExcluded(start, end, exclude);
+    data.hiddenRanges = mergeRanges([...data.hiddenRanges, ...chunks]);
+    if (deferApply) return chunks;
     await applyVisibility(data.hiddenRanges, null);
+    return chunks;
 }
